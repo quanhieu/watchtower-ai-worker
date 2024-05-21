@@ -61,7 +61,7 @@ const HomePage = (props: Props) => {
 
   // Initialize the worker and load the model
   const initWorker = () => {
-    worker = new Worker(new URL('../tensorflowWorker.js', import.meta.url));
+    worker = new Worker(new URL('../worker/tensorflowWorker.js', import.meta.url));
     worker.onmessage = handleWorkerMessages;
     worker.postMessage({ type: 'loadModel' });
   };
@@ -328,45 +328,45 @@ const HomePage = (props: Props) => {
       </div>
     );
   }
-
-  function resizeCanvas(canvasRef: React.RefObject<HTMLCanvasElement>, webcamRef: React.RefObject<Webcam>) {
-    const canvas = canvasRef.current;
-    const video = webcamRef.current?.video;
-
-    if (canvas && video) {
-      const { videoWidth, videoHeight } = video;
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
-    }
-  }
-
-  function formatDate(d: Date) {
-    const formattedDate =
-      [
-        (d.getMonth() + 1).toString().padStart(2, "0"),
-        d.getDate().toString().padStart(2, "0"),
-        d.getFullYear(),
-      ].join("-") +
-      " " +
-      [
-        d.getHours().toString().padStart(2, "0"),
-        d.getMinutes().toString().padStart(2, "0"),
-        d.getSeconds().toString().padStart(2, "0"),
-      ].join("-");
-    return formattedDate;
-  }
-
-  function base64toBlob(base64Data: any) {
-    const byteCharacters = atob(base64Data.split(",")[1]);
-    const arrayBuffer = new ArrayBuffer(byteCharacters.length);
-    const byteArray = new Uint8Array(arrayBuffer);
-
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteArray[i] = byteCharacters.charCodeAt(i);
-    }
-
-    return new Blob([arrayBuffer], { type: "image/png" });
-  }
 };
+
+function resizeCanvas(canvasRef: React.RefObject<HTMLCanvasElement>, webcamRef: React.RefObject<Webcam>) {
+  const canvas = canvasRef.current;
+  const video = webcamRef.current?.video;
+
+  if (canvas && video) {
+    const { videoWidth, videoHeight } = video;
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
+  }
+}
+
+function formatDate(d: Date) {
+  const formattedDate =
+    [
+      (d.getMonth() + 1).toString().padStart(2, "0"),
+      d.getDate().toString().padStart(2, "0"),
+      d.getFullYear(),
+    ].join("-") +
+    " " +
+    [
+      d.getHours().toString().padStart(2, "0"),
+      d.getMinutes().toString().padStart(2, "0"),
+      d.getSeconds().toString().padStart(2, "0"),
+    ].join("-");
+  return formattedDate;
+}
+
+function base64toBlob(base64Data: any) {
+  const byteCharacters = atob(base64Data.split(",")[1]);
+  const arrayBuffer = new ArrayBuffer(byteCharacters.length);
+  const byteArray = new Uint8Array(arrayBuffer);
+
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteArray[i] = byteCharacters.charCodeAt(i);
+  }
+
+  return new Blob([arrayBuffer], { type: "image/png" });
+}
 
 export default HomePage;
