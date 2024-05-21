@@ -6,31 +6,31 @@ export function drawOnCanvas(
   predictions: DetectedObject[],
   ctx: CanvasRenderingContext2D | null | undefined
 ) {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Clear previous drawings
+
   predictions.forEach((detectedObject: DetectedObject) => {
-    const { class: name, bbox, score } = detectedObject;
+    const { class: name, bbox } = detectedObject;
     const [x, y, width, height] = bbox;
 
-    if (ctx) {
-      ctx.beginPath();
+    ctx.beginPath();
 
-      // styling
-      ctx.fillStyle = name === "person" ? "#FF0F0F" : "#00B612";
-      ctx.globalAlpha = 0.4;
+    // Styling
+    ctx.fillStyle = name === "person" ? "#FF0F0F" : "#00B612";
+    ctx.globalAlpha = 0.4;
 
-      mirrored
-        ? ctx.roundRect(ctx.canvas.width - x, y, -width, height, 8)
-        : ctx.roundRect(x, y, width, height, 8);
-
-      // draw stroke or fill
-      ctx.fill();
-
-      // text styling
-      ctx.font = "12px Courier New";
-      ctx.fillStyle = 'black'
-      ctx.globalAlpha = 1;
-      mirrored
-        ? ctx.fillText(name, ctx.canvas.width - x -width + 10, y + 20)
-        : ctx.fillText(name, x + 10 , y + 20);
+    if (mirrored) {
+      ctx.roundRect(ctx.canvas.width - x - width, y, width, height, 8);
+    } else {
+      ctx.roundRect(x, y, width, height, 8);
     }
+
+    ctx.fill();
+
+    // Text styling
+    ctx.font = "12px Courier New";
+    ctx.fillStyle = 'black';
+    ctx.globalAlpha = 1;
+    ctx.fillText(name, mirrored ? ctx.canvas.width - x - width + 10 : x + 10, y + 20);
   });
 }
