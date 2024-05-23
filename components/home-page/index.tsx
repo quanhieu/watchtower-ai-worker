@@ -24,7 +24,6 @@ export default function HomeComponent() {
   const [autoRecordEnabled, setAutoRecordEnabled] = useState<boolean>(false);
   const [volume, setVolume] = useState(0.8);
   const [loading, setLoading] = useState(false);
-
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const toggleMirrored = useCallback(() => {
@@ -54,19 +53,21 @@ export default function HomeComponent() {
     }
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    initWorker();
-  }, []);
+    const startRecording = useCallback((doBeep: boolean) => {
+    if (webcamRef.current && mediaRecorderRef.current?.state !== 'recording') {
+      mediaRecorderRef.current?.start();
+      if (doBeep) beep(volume);
 
-  // Initialize the worker and load the model
-  const initWorker = () => {
-    worker = new Worker(new URL('../../worker/tensorflowWorker.js', import.meta.url));
-    worker.onmessage = handleWorkerMessages;
-    worker.postMessage({ type: 'loadModel' });
-  };
+      stopTimeout = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          mediaRecorderRef.current.requestData();
+          mediaRecorderRef.current.stop();
+        }
+      }, 30000);
+    }
+  }, [volume])
 
-  const handleWorkerMessages = (e: MessageEvent) => {
+  const handleWorkerMessages = useCallback((e: MessageEvent) => {
     const { type, predictions, mirrored } = e.data;
 
     if (type === 'modelLoaded') {
@@ -81,7 +82,20 @@ export default function HomeComponent() {
         startRecording(true);
       }
     }
-  };
+  }, [autoRecordEnabled, startRecording]);
+
+  // Initialize the worker and load the model
+  const initWorker = useCallback(() => {
+    worker = new Worker(new URL('../../worker/tensorflowWorker.js', import.meta.url));
+    worker.onmessage = handleWorkerMessages;
+    worker.postMessage({ type: 'loadModel' });
+  }, [])
+
+
+  useEffect(() => {
+    setLoading(true);
+    initWorker();
+  }, []);
 
   const runPrediction = useCallback(() => {
     if (
@@ -101,28 +115,14 @@ export default function HomeComponent() {
       }
     }
   }, [mirrored, autoRecordEnabled]);
-
+  
   useEffect(() => {
     const interval = setInterval(runPrediction, 100); // Reduce the frequency to 500ms
 
     return () => clearInterval(interval);
   }, [runPrediction]);
 
-  const startRecording = (doBeep: boolean) => {
-    if (webcamRef.current && mediaRecorderRef.current?.state !== 'recording') {
-      mediaRecorderRef.current?.start();
-      if (doBeep) beep(volume);
-
-      stopTimeout = setTimeout(() => {
-        if (mediaRecorderRef.current?.state === 'recording') {
-          mediaRecorderRef.current.requestData();
-          mediaRecorderRef.current.stop();
-        }
-      }, 30000);
-    }
-  };
-
-  const userPromptScreenshot = () => {
+  const userPromptScreenshot = useCallback(() => {
     if (!webcamRef.current) {
       toast('Camera not found. Please refresh');
     } else {
@@ -135,9 +135,9 @@ export default function HomeComponent() {
       a.download = `${formatDate(new Date())}.png`;
       a.click();
     }
-  };
+  }, [])
 
-  const userPromptRecord = () => {
+  const userPromptRecord = useCallback(() => {
     if (!webcamRef.current) {
       toast('Camera is not found. Please refresh.');
     }
@@ -150,12 +150,12 @@ export default function HomeComponent() {
     } else {
       startRecording(false);
     }
-  };
+  }, [startRecording])
 
-  const toggleAutoRecord = () => {
+  const toggleAutoRecord = useCallback(() => {
     setAutoRecordEnabled(prev => !prev);
     toast(autoRecordEnabled ? 'Autorecord disabled' : 'Autorecord enabled');
-  };
+  }, [autoRecordEnabled])
 
   return (
     <div className='flex h-screen'>
